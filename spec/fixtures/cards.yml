@@ -1,0 +1,17 @@
+card_one:
+  name: "First Trello Card"
+  description: "A description for the first card."
+  due_date: "2024-12-24"
+  trello_card_id: "abc123xyz"
+
+card_two:
+  name: "Second Trello Card"
+  description: "A description for the second card."
+  due_date: "2024-12-25"
+  trello_card_id: "def456uvw"
+
+card_three:
+  name: "Third Trello Card"
+  description: "A description for the third card."
+  due_date: "2024-12-26"
+  trello_card_id: "ghi789rst"

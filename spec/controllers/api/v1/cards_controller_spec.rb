@@ -1,13 +1,129 @@
 require 'rails_helper'
+require 'webmock/rspec'
 
 RSpec.describe Api::V1::CardsController, type: :controller do
-  describe "GET /index" do
-    # TODO: Test your card API here
-    pending "add some examples (or delete) #{__FILE__}"
+  fixtures :cards
+
+  describe "GET #index" do
+    it "returns a successful response" do
+      get :index
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "returns all cards" do
+      get :index
+      json = JSON.parse(response.body)
+      expect(json.size).to eq(3)
+    end
   end
 
   describe "POST /create" do
-    # TODO: Test your card API here
-    pending "add some examples (or delete) #{__FILE__}"
+    context "with valid attributes" do
+      it "creates a new card" do
+        params = {
+          name: "New Trello Card",
+          description: "A description for the new card.",
+          due_date: "2024-12-06"
+        }
+
+        stub_request(:post, "https://api.trello.com/1/cards")
+          .with(
+            query: {
+              "idList" => "6745aff80272c27d1c71bbf6",
+              "key" => ENV['TRELLO_KEY'],
+              "token" => ENV['TRELLO_TOKEN'],
+              "name" => params[:name],
+              "desc" => params[:description],
+              "due" => params[:due_date],
+            },
+            headers: { 'Accept'=>'application/json' }
+          )
+          .to_return(
+            status: 200,
+            body: { id: "trello123" }.to_json
+          )
+
+
+        initial_count = Card.count
+        post :create, params: params
+
+        expect(response).to have_http_status(:created)
+        json = JSON.parse(response.body)
+        expect(json['data']['name']).to eq("New Trello Card")
+        expect(json['data']['trello_card_id']).to eq("trello123")
+        expect(Card.count).to eq(initial_count+1)
+      end
+
+      it "creates a new card even when due_date is not a date" do
+        params = {
+          name: "New Trello Card",
+          description: "A description for the new card.",
+          due_date: "hello"
+        }
+
+        stub_request(:post, "https://api.trello.com/1/cards")
+          .with(
+            query: {
+              "idList" => "6745aff80272c27d1c71bbf6",
+              "key" => ENV['TRELLO_KEY'],
+              "token" => ENV['TRELLO_TOKEN'],
+              "name" => params[:name],
+              "desc" => params[:description],
+            },
+            headers: { 'Accept'=>'application/json' }
+          )
+          .to_return(
+            status: 200,
+            body: { id: "trello123" }.to_json
+          )
+
+        initial_count = Card.count
+        post :create, params: params
+
+        expect(response).to have_http_status(:created)
+        json = JSON.parse(response.body)
+        expect(json['data']['name']).to eq("New Trello Card")
+        expect(json['data']['due_date']).to eq(nil)
+        expect(Card.count).to eq(initial_count+1)
+      end
+
+      it "id doesn't crate a new card when Trello returns error" do
+        params = {
+          name: "New Trello Card",
+          description: "A description for the new card.",
+          due_date: "hello"
+        }
+
+        stub_request(:post, "https://api.trello.com/1/cards")
+          .with(
+            query: {
+              "idList" => "6745aff80272c27d1c71bbf6",
+              "key" => ENV['TRELLO_KEY'],
+              "token" => ENV['TRELLO_TOKEN'],
+              "name" => params[:name],
+              "desc" => params[:description],
+            },
+            headers: { 'Accept'=>'application/json' }
+          )
+          .to_return(
+            status: 500,
+            body: { id: "trello123" }.to_json
+          )
+
+        initial_count = Card.count
+        post :create, params: params
+
+        expect(response).to have_http_status(:failed_dependency)
+        expect(Card.count).to eq(initial_count)
+      end
+    end
+
+    context "with invalid attributes" do
+      it "does not create a new card" do
+        post :create, params: { card: { name: "" } }
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
   end
 end
