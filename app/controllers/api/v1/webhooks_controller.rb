@@ -51,7 +51,7 @@ class Api::V1::WebhooksController < ApplicationController
       trello_card_id: card_data['id'],
       name: card_data['name'],
       description: card_data['desc'],
-    # id_list: payload['action']['data']['list']['id']
+      trello_list_id: payload['action']['data']['list']['id']
     )
 
     Rails.logger.info("Card created: #{card_data['id']}")

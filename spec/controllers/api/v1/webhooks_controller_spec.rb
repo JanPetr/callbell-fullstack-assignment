@@ -10,6 +10,9 @@ RSpec.describe Api::V1::WebhooksController, type: :controller do
             "id" => "trello123",
             "name" => "New Card",
             "desc" => "A new card created via Trello"
+          },
+          "list" => {
+            "id" => "trello_list_one"
           }
         }
       }
@@ -74,7 +77,7 @@ RSpec.describe Api::V1::WebhooksController, type: :controller do
     end
 
     context "with valid updateCard payload" do
-      let!(:existing_card) { Card.create!(trello_card_id: "trello123", name: "Old Name", description: "Old Description") }
+      let!(:existing_card) { Card.create!(trello_card_id: "trello123", name: "Old Name", description: "Old Description", trello_list_id: "trello_list_one") }
 
       it "updates an existing card in the database" do
         expect {
@@ -90,7 +93,7 @@ RSpec.describe Api::V1::WebhooksController, type: :controller do
     end
 
     context "with valid deleteCard payload" do
-      let!(:existing_card) { Card.create!(trello_card_id: "trello123", name: "Old Name", description: "Old Description") }
+      let!(:existing_card) { Card.create!(trello_card_id: "trello123", name: "Old Name", description: "Old Description", trello_list_id: "trello_list_one") }
 
       it "deletes the card from the database" do
         expect {

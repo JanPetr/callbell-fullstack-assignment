@@ -3,6 +3,8 @@ class Card < ApplicationRecord
 
   belongs_to :list, primary_key: :trello_list_id, foreign_key: :trello_list_id
 
+  after_commit :broadcast_all_lists
+
   def push_to_trello
     trello_api_key = ENV['TRELLO_KEY']
     trello_token = ENV['TRELLO_TOKEN']
@@ -29,5 +31,15 @@ class Card < ApplicationRecord
       Rails.logger.error "Unexpected Error: #{e.message}"
       nil
     end
+  end
+
+  private
+
+  def broadcast_all_lists
+    # IMPR: send only changed lists
+    ActionCable.server.broadcast(
+      "lists",
+      List.includes(:cards).as_json(include: :cards)
+    )
   end
 end
