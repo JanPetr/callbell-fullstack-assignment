@@ -2,7 +2,7 @@ require 'rails_helper'
 require 'webmock/rspec'
 
 RSpec.describe Api::V1::CardsController, type: :controller do
-  fixtures :cards
+  fixtures :cards, :lists
 
   describe "GET #index" do
     it "returns a successful response" do
@@ -13,23 +13,26 @@ RSpec.describe Api::V1::CardsController, type: :controller do
     it "returns all cards" do
       get :index
       json = JSON.parse(response.body)
-      expect(json.size).to eq(3)
+      expect(json.size).to eq(1)
+      expect(json[0]['cards'].size).to eq(3)
     end
   end
 
   describe "POST /create" do
     context "with valid attributes" do
       it "creates a new card" do
+        list = lists(:list_one)
         params = {
           name: "New Trello Card",
           description: "A description for the new card.",
-          due_date: "2024-12-06"
+          due_date: "2024-12-06",
+          id_list: list.trello_list_id,
         }
 
         stub_request(:post, "https://api.trello.com/1/cards")
           .with(
             query: {
-              "idList" => "6745aff80272c27d1c71bbf6",
+              "idList" => list.trello_list_id,
               "key" => ENV['TRELLO_KEY'],
               "token" => ENV['TRELLO_TOKEN'],
               "name" => params[:name],
@@ -55,16 +58,18 @@ RSpec.describe Api::V1::CardsController, type: :controller do
       end
 
       it "creates a new card even when due_date is not a date" do
+        list = lists(:list_one)
         params = {
           name: "New Trello Card",
           description: "A description for the new card.",
-          due_date: "hello"
+          due_date: "hello",
+          id_list: list.trello_list_id,
         }
 
         stub_request(:post, "https://api.trello.com/1/cards")
           .with(
             query: {
-              "idList" => "6745aff80272c27d1c71bbf6",
+              "idList" => list.trello_list_id,
               "key" => ENV['TRELLO_KEY'],
               "token" => ENV['TRELLO_TOKEN'],
               "name" => params[:name],
@@ -88,16 +93,18 @@ RSpec.describe Api::V1::CardsController, type: :controller do
       end
 
       it "id doesn't crate a new card when Trello returns error" do
+        list = lists(:list_one)
         params = {
           name: "New Trello Card",
           description: "A description for the new card.",
-          due_date: "hello"
+          due_date: "hello",
+          id_list: list.trello_list_id,
         }
 
         stub_request(:post, "https://api.trello.com/1/cards")
           .with(
             query: {
-              "idList" => "6745aff80272c27d1c71bbf6",
+              "idList" => list.trello_list_id,
               "key" => ENV['TRELLO_KEY'],
               "token" => ENV['TRELLO_TOKEN'],
               "name" => params[:name],
@@ -120,9 +127,16 @@ RSpec.describe Api::V1::CardsController, type: :controller do
 
     context "with invalid attributes" do
       it "does not create a new card" do
-        post :create, params: { card: { name: "" } }
+        list = lists(:list_one)
+        post :create, params: {  name: "", id_list: list.trello_list_id, }
 
         expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "return invalid dependency for non existent list" do
+        post :create, params: {  name: "", id_list: "foobarbaz", }
+
+        expect(response).to have_http_status(:failed_dependency)
       end
     end
   end

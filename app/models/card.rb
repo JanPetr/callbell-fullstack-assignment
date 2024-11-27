@@ -1,16 +1,16 @@
 class Card < ApplicationRecord
   validates :name, presence: true
-  # validates :id_list, presence: true
+
+  belongs_to :list, primary_key: :trello_list_id, foreign_key: :trello_list_id
 
   def push_to_trello
     trello_api_key = ENV['TRELLO_KEY']
     trello_token = ENV['TRELLO_TOKEN']
-    list_id = "6745aff80272c27d1c71bbf6"
 
     url = 'https://api.trello.com/1/cards'
 
     params = {
-      idList: list_id,
+      idList: trello_list_id,
       key: trello_api_key,
       token: trello_token,
       name: name,

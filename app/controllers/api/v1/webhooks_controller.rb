@@ -15,6 +15,8 @@ class Api::V1::WebhooksController < ApplicationController
       handle_update_card(payload)
     when 'deleteCard'
       handle_delete_card(payload)
+    when 'createList'
+      handle_create_list(payload)
     else
       Rails.logger.info("Unhandled Trello event type: #{payload['action']['type']}")
     end
@@ -70,5 +72,16 @@ class Api::V1::WebhooksController < ApplicationController
     card = Card.find_by(trello_card_id: card_data['id'])
 
     card.destroy! if card.present?
+  end
+
+  def handle_create_list(payload)
+    list_data = payload['action']['data']['list']
+
+    List.create!(
+      trello_list_id: list_data['id'],
+      name: list_data['name'],
+    )
+
+    Rails.logger.info("List created: #{list_data['id']}")
   end
 end

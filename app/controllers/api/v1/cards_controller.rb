@@ -1,11 +1,20 @@
 class Api::V1::CardsController < ApplicationController
   def index
-    cards = Card.all
-    render json: cards, status: :ok
+    lists = List.includes(:cards).all
+    render json: lists.as_json(include: :cards), status: :ok
   end
 
   def create
-    card_params = params.permit(:name, :description, :due_date)
+    card_params = params.permit(:name, :description, :due_date, :id_list)
+
+    list = List.find_by(trello_list_id: card_params[:id_list])
+    if list.blank?
+      head :failed_dependency
+      return
+    end
+
+    card_params.delete('id_list')
+    card_params[:trello_list_id] = list.trello_list_id
 
     card = Card.new(card_params)
 
