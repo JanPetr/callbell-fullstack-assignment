@@ -21,6 +21,8 @@ class Api::V1::WebhooksController < ApplicationController
       Rails.logger.info("Unhandled Trello event type: #{payload['action']['type']}")
     end
 
+    # IMPR: handle archiving, images, delete lists ...
+
     head :ok
   rescue JSON::ParserError
     Rails.logger.error("Invalid JSON payload from Trello")
@@ -47,10 +49,13 @@ class Api::V1::WebhooksController < ApplicationController
   def handle_create_card(payload)
     card_data = payload['action']['data']['card']
 
+    return if Card.find_by(trello_card_id: card_data['id']).present?
+
     Card.create!(
       trello_card_id: card_data['id'],
       name: card_data['name'],
       description: card_data['desc'],
+      due_date: card_data['due'],
       trello_list_id: payload['action']['data']['list']['id']
     )
 
@@ -60,11 +65,16 @@ class Api::V1::WebhooksController < ApplicationController
   def handle_update_card(payload)
     card_data = payload['action']['data']['card']
     card = Card.find_by(trello_card_id: card_data['id'])
+    return if card.blank?
 
-    card.update!(
+    update_data = {
       name: card_data['name'],
-      description: card_data['desc']
-    ) if card.present?
+      due_date: card_data['due'],
+    }
+
+    update_data[:description] = card_data['desc'] unless card_data['desc'].nil?
+
+    card.update!(update_data)
   end
 
   def handle_delete_card(payload)

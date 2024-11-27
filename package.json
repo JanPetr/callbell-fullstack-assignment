@@ -8,6 +8,7 @@
     "babel-plugin-transform-react-remove-prop-types": "^0.4.24",
     "html-webpack-harddisk-plugin": "^2.0.0",
     "html-webpack-plugin": "^4.5.2",
+    "marked": "^4.0.0",
     "postcss": "^7",
     "prop-types": "^15.7.2",
     "react": "^17.0.2",

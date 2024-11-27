@@ -5,15 +5,14 @@ class Api::V1::CardsController < ApplicationController
   end
 
   def create
-    card_params = params.permit(:name, :description, :due_date, :id_list)
+    card_params = params.require(:card).permit(:name, :description, :due_date)
 
-    list = List.find_by(trello_list_id: card_params[:id_list])
+    list = List.find_by(trello_list_id: params[:id_list])
     if list.blank?
       head :failed_dependency
       return
     end
 
-    card_params.delete('id_list')
     card_params[:trello_list_id] = list.trello_list_id
 
     card = Card.new(card_params)
