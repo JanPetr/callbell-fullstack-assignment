@@ -8,6 +8,12 @@ export default function CardDetailsModal({ card, onClose }) {
     return new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(date));
   };
   
+  const sanitize = (dirty) => {
+    const clean = document.createElement('div');
+    clean.textContent = dirty;
+    return clean.innerHTML;
+  };
+  
   return (
     <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded shadow p-6 w-96">
@@ -17,7 +23,7 @@ export default function CardDetailsModal({ card, onClose }) {
             className="mt-2 text-gray-800 rounded"
             dangerouslySetInnerHTML={{
               __html: card.description
-                ? marked(card.description)
+                ? marked(sanitize(card.description))
                 : "<em>No description</em>",
             }}
           />
