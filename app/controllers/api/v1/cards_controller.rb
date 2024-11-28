@@ -30,8 +30,13 @@ class Api::V1::CardsController < ApplicationController
       return
     end
 
-    card.trello_card_id = result['id']
-    card.save!
+    begin
+      card.trello_card_id = result['id']
+      card.save!
+    rescue ActiveRecord::RecordNotSaved => e
+      card.delete_from_trello
+      raise e
+    end
 
     render json: { ok: true, data: card }, status: :created
   end
