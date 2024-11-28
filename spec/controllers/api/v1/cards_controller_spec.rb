@@ -5,6 +5,8 @@ RSpec.describe Api::V1::CardsController, type: :controller do
   fixtures :cards, :lists
 
   describe "GET #index" do
+    before { allow(controller).to receive(:verify_api_key).and_return(true) }
+
     it "returns a successful response" do
       get :index
       expect(response).to have_http_status(:ok)
@@ -19,6 +21,8 @@ RSpec.describe Api::V1::CardsController, type: :controller do
   end
 
   describe "POST /create" do
+    before { allow(controller).to receive(:verify_api_key).and_return(true) }
+
     context "with valid attributes" do
       it "creates a new card" do
         list = lists(:list_one)
@@ -46,15 +50,14 @@ RSpec.describe Api::V1::CardsController, type: :controller do
             body: { id: "trello123" }.to_json
           )
 
-
-        initial_count = Card.count
-        post :create, params: params
+        expect {
+          post :create, params: { card: params, id_list: params[:id_list] }
+        }.to change(Card, :count).by(1)
 
         expect(response).to have_http_status(:created)
         json = JSON.parse(response.body)
         expect(json['data']['name']).to eq("New Trello Card")
         expect(json['data']['trello_card_id']).to eq("trello123")
-        expect(Card.count).to eq(initial_count+1)
       end
 
       it "creates a new card even when due_date is not a date" do
@@ -82,14 +85,14 @@ RSpec.describe Api::V1::CardsController, type: :controller do
             body: { id: "trello123" }.to_json
           )
 
-        initial_count = Card.count
-        post :create, params: params
+        expect {
+          post :create, params: { card: params, id_list: params[:id_list] }
+        }.to change(Card, :count).by(1)
 
         expect(response).to have_http_status(:created)
         json = JSON.parse(response.body)
         expect(json['data']['name']).to eq("New Trello Card")
         expect(json['data']['due_date']).to eq(nil)
-        expect(Card.count).to eq(initial_count+1)
       end
 
       it "id doesn't crate a new card when Trello returns error" do
@@ -117,24 +120,24 @@ RSpec.describe Api::V1::CardsController, type: :controller do
             body: { id: "trello123" }.to_json
           )
 
-        initial_count = Card.count
-        post :create, params: params
+        expect {
+          post :create, params: { card: params, id_list: params[:id_list] }
+        }.to change(Card, :count).by(0)
 
         expect(response).to have_http_status(:failed_dependency)
-        expect(Card.count).to eq(initial_count)
       end
     end
 
     context "with invalid attributes" do
       it "does not create a new card" do
         list = lists(:list_one)
-        post :create, params: {  name: "", id_list: list.trello_list_id, }
+        post :create, params: { card: { name: "" }, id_list: list.trello_list_id, }
 
         expect(response).to have_http_status(:unprocessable_entity)
       end
 
       it "return invalid dependency for non existent list" do
-        post :create, params: {  name: "", id_list: "foobarbaz", }
+        post :create, params: { card: { name: "" }, id_list: "foobarbaz", }
 
         expect(response).to have_http_status(:failed_dependency)
       end

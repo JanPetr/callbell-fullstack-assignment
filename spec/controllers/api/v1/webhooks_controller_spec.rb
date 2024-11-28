@@ -19,6 +19,24 @@ RSpec.describe Api::V1::WebhooksController, type: :controller do
     }.to_json
   end
 
+  let(:valid_create_card_payload_for_already_existent_card) do
+    {
+      "action" => {
+        "type" => "createCard",
+        "data" => {
+          "card" => {
+            "id" => "abc123xyz",
+            "name" => "New Card",
+            "desc" => "A new card created via Trello"
+          },
+          "list" => {
+            "id" => "trello_list_one"
+          }
+        }
+      }
+    }.to_json
+  end
+
   let(:valid_update_card_payload) do
     {
       "action" => {
@@ -27,7 +45,8 @@ RSpec.describe Api::V1::WebhooksController, type: :controller do
           "card" => {
             "id" => "trello123",
             "name" => "Updated Card",
-            "desc" => "Updated description"
+            "desc" => "Updated description",
+            "due" => "2025-09-08",
           }
         }
       }
@@ -76,6 +95,16 @@ RSpec.describe Api::V1::WebhooksController, type: :controller do
       end
     end
 
+    context "with valid createCard payload for already existent card" do
+      it "creates a new card in the database" do
+        expect {
+          post :create, body: valid_create_card_payload_for_already_existent_card
+        }.to change(Card, :count).by(0)
+
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
     context "with valid updateCard payload" do
       let!(:existing_card) { Card.create!(trello_card_id: "trello123", name: "Old Name", description: "Old Description", trello_list_id: "trello_list_one") }
 
@@ -89,6 +118,7 @@ RSpec.describe Api::V1::WebhooksController, type: :controller do
         card = Card.find_by(trello_card_id: "trello123")
         expect(card.name).to eq("Updated Card")
         expect(card.description).to eq("Updated description")
+        expect(card.due_date).to eq(DateTime.parse('2025-09-08'))
       end
     end
 

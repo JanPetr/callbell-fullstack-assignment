@@ -15,9 +15,16 @@ export default function App() {
   const [selectedCard, setSelectedCard] = useState(null);
   
   useEffect(() => {
-    async function fetchData() {
+    async function intializeApp() {
+      const response = await fetch('/frontend_config');
+      const config = await response.json();
+      window.API_KEY = config.api_key;
+      
       try {
-        const response = await fetch("/api/v1/cards");
+        const response = await fetch("/api/v1/cards", {
+          method: "GET",
+          headers: { "X-API-Key": window.API_KEY }
+        });
         const data = await response.json();
         setLists(data);
       } catch (error) {
@@ -27,7 +34,7 @@ export default function App() {
       }
     }
     
-    fetchData();
+    intializeApp();
     
     const subscription = cable.subscriptions.create("ListsChannel", {
       received: (updatedLists) => {
@@ -49,7 +56,7 @@ export default function App() {
     try {
       const response = await fetch("/api/v1/cards", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-API-Key": window.API_KEY },
         body: JSON.stringify({ ...cardData, id_list: activeListId }),
       });
 

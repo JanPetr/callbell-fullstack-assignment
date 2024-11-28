@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   end
 
   # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
+  get '/frontend_config', to: 'pages#frontend_config'
   get '*path', to: 'pages#index'
   root 'pages#index', as: :pages_index
 end

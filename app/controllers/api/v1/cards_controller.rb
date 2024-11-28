@@ -1,4 +1,6 @@
 class Api::V1::CardsController < ApplicationController
+  before_action :verify_api_key
+
   def index
     lists = List.includes(:cards).all
     render json: lists.as_json(include: :cards), status: :ok
@@ -32,5 +34,13 @@ class Api::V1::CardsController < ApplicationController
     card.save!
 
     render json: { ok: true, data: card }, status: :created
+  end
+
+  private
+
+  def verify_api_key
+    unless request.headers['X-API-Key'] == ENV['FE_API_KEY']
+       render json: { error: 'Invalid API token' }, status: :unauthorized
+     end
   end
 end
